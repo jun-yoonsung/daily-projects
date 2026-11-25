@@ -1,6 +1,8 @@
 """스도쿠 솔버 패키지."""
 
 from .board import is_solved, is_valid, parse, pretty, to_string
+from .generator import generate
+from .logic import logic_solve
 from .solver import candidates, count_solutions, has_unique_solution, solve, solve_all
 
 __all__ = [
@@ -14,4 +16,6 @@ __all__ = [
     "solve_all",
     "count_solutions",
     "has_unique_solution",
+    "generate",
+    "logic_solve",
 ]
