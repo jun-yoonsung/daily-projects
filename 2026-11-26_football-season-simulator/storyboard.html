@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>시즌 시뮬레이터 스토리보드</title>
+<style>
+  :root { --bg:#f4f6f3; --card:#ffffff; --ink:#1d2a22; --muted:#5d6b62; --line:#d5ddd6; --pitch:#2f7d4a; --term:#14201a; --termink:#d8f3df; --warn:#b3471f; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#101612; --card:#18211b; --ink:#e3ece5; --muted:#9aaba0; --line:#2c3a31; --pitch:#4fae6f; --term:#0a0f0c; --termink:#c7efd2; --warn:#ff8a5c; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:system-ui, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; line-height:1.55; }
+  header { padding:32px 16px 8px; max-width:980px; margin:0 auto; }
+  header h1 { margin:0 0 4px; font-size:1.6rem; }
+  header p { margin:0; color:var(--muted); }
+  main { max-width:980px; margin:0 auto; padding:16px; display:grid; gap:20px; }
+  .scene { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; display:grid; grid-template-columns: 1fr; gap:12px; }
+  @media (min-width: 760px) { .scene { grid-template-columns: 1.3fr 1fr; } }
+  .num { display:inline-block; background:var(--pitch); color:#fff; border-radius:999px; padding:2px 10px; font-weight:700; font-size:.85rem; }
+  h2 { margin:6px 0 8px; font-size:1.15rem; }
+  pre.term { margin:0; background:var(--term); color:var(--termink); border-radius:8px; padding:12px; font-size:.78rem; overflow-x:auto; white-space:pre; }
+  .desc p { margin:0 0 8px; }
+  .next { border-top:1px dashed var(--line); padding-top:8px; color:var(--muted); font-size:.9rem; }
+  .next b { color:var(--ink); }
+  .err { color:var(--warn); }
+  .flow { display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:.85rem; }
+  .flow span { border:1px solid var(--line); border-radius:6px; padding:4px 8px; background:var(--bg); }
+  .mock { border:1px solid var(--line); border-radius:8px; padding:10px; font-size:.8rem; background:var(--bg); }
+  .mock table { border-collapse:collapse; width:100%; }
+  .mock td, .mock th { border-bottom:1px solid var(--line); padding:3px 4px; text-align:right; }
+  .mock td:first-child, .mock th:first-child { text-align:left; }
+  .bar { display:inline-block; height:8px; background:var(--pitch); border-radius:2px; vertical-align:middle; }
+  .h1c { background:rgba(47,125,74,.85); color:#fff; }
+  .h2c { background:rgba(47,125,74,.45); }
+  .h3c { background:rgba(47,125,74,.15); }
+  footer { max-width:980px; margin:0 auto; padding:8px 16px 32px; color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>축구 리그 시즌 시뮬레이터 — 스토리보드</h1>
+  <p>PRD 사용자 시나리오 1~5를 장면(컷)별로 보여줍니다. 모든 팀과 데이터는 가상입니다.</p>
+</header>
+<main>
+
+  <section class="scene">
+    <pre class="term">$ python tools/generate_data.py --seed 2026
+teams.csv   : 12 teams
+matches.csv : 132 matches (played 90, remaining 42)
+저장 위치    : data/</pre>
+    <div class="desc">
+      <span class="num">장면 0</span>
+      <h2>가상 데이터 준비</h2>
+      <p>더블 라운드로빈 일정(22라운드)을 만들고, 앞 15라운드는 숨은 "진짜 전력"으로 결과를 생성합니다. 저장소에 이미 포함되어 있어 보통은 건너뜁니다.</p>
+      <div class="flow"><span>팀 12개</span>→<span>원형 방식 일정</span>→<span>15라운드 결과</span>→<span>CSV</span></div>
+      <p class="next"><b>전환 조건:</b> data/ 폴더에 CSV 두 개가 있으면 장면 1로.</p>
+    </div>
+  </section>
+
+  <section class="scene">
+    <pre class="term">$ python -m fsim table
+ #  팀            경기  승  무  패  득  실  득실  승점
+ 1  한강 FC        15  10   3   2  31  14  +17    33
+ 2  부산 갈매기     15   9   4   2  27  15  +12    31
+ 3  대전 사이언스   15   8   3   4  24  18   +6    27
+ ...
+11  춘천 호수      15   3   4   8  14  25  -11    13
+12  여수 밤바다    15   2   3  10  12  30  -18     9</pre>
+    <div class="desc">
+      <span class="num">장면 1</span>
+      <h2>현재 순위 보기 (시나리오 1)</h2>
+      <p>치른 경기만으로 순위표를 계산합니다. 정렬은 승점 → 득실차 → 다득점 → 팀 이름 순입니다.</p>
+      <p class="next"><b>전환 조건:</b> "남은 경기를 고려하면?"이 궁금해지면 장면 2(전력)로.</p>
+    </div>
+  </section>
+
+  <section class="scene">
+    <pre class="term">$ python -m fsim strength
+리그 평균 득점(원정 기준) : 1.21   홈 어드밴티지 : x1.18
+ 팀            공격력  수비력   (공격 &gt;1 강함, 수비 &lt;1 강함)
+ 한강 FC        1.38    0.71
+ 부산 갈매기     1.22    0.80
+ ...
+ 여수 밤바다    0.74    1.31</pre>
+    <div class="desc">
+      <span class="num">장면 2</span>
+      <h2>팀 전력 확인 (시나리오 2)</h2>
+      <p>득점·실점을 리그 평균 대비 비율로 바꾸고 경기 수가 적은 영향을 줄이기 위해 1.0 쪽으로 축소 보정합니다.</p>
+      <div class="flow"><span>홈 λ = 기본 × 홈어드밴티지 × 공격[홈] × 수비[원정]</span></div>
+      <p class="next"><b>전환 조건:</b> 전력 값이 준비되면 장면 3(시뮬레이션)으로.</p>
+    </div>
+  </section>
+
+  <section class="scene">
+    <pre class="term">$ python -m fsim simulate --n 10000 --seed 42
+남은 경기 42개를 10000회 시뮬레이션 (seed=42, 2.8초)
+ #  팀            현재승점 예상승점  우승   상위4  강등
+ 1  한강 FC          33     45.6   58.2%  97.9%   0.0%
+ 2  부산 갈매기       31     42.9   27.5%  92.4%   0.0%
+ ...
+12  여수 밤바다       9     14.1    0.0%   0.0%  88.7%</pre>
+    <div class="desc">
+      <span class="num">장면 3</span>
+      <h2>시즌 시뮬레이션 (시나리오 3)</h2>
+      <p>남은 각 경기의 양 팀 득점을 포아송 분포로 뽑아 시즌을 끝까지 진행하고, 최종 순위를 반복 집계합니다. 같은 시드면 같은 결과입니다.</p>
+      <p class="next"><b>전환 조건:</b> 결과를 공유하고 싶으면 <code>--html</code> 을 붙여 장면 4로.</p>
+    </div>
+  </section>
+
+  <section class="scene">
+    <div class="mock">
+      <b>시즌 시뮬레이션 리포트</b> (report.html)
+      <table>
+        <tr><th>팀</th><th>우승</th><th>1위</th><th>2위</th><th>3위</th><th>…</th></tr>
+        <tr><td>한강 FC</td><td><span class="bar" style="width:58px"></span> 58%</td><td class="h1c">58%</td><td class="h2c">27%</td><td class="h3c">10%</td><td>…</td></tr>
+        <tr><td>부산 갈매기</td><td><span class="bar" style="width:27px"></span> 27%</td><td class="h2c">27%</td><td class="h2c">38%</td><td class="h3c">20%</td><td>…</td></tr>
+        <tr><td>대전 사이언스</td><td><span class="bar" style="width:9px"></span> 9%</td><td class="h3c">9%</td><td class="h3c">19%</td><td class="h2c">31%</td><td>…</td></tr>
+      </table>
+    </div>
+    <div class="desc">
+      <span class="num">장면 4</span>
+      <h2>HTML 리포트 공유 (시나리오 4)</h2>
+      <p><code>simulate --html report.html</code> 이 확률 막대와 순위 분포 히트맵(진할수록 확률 높음)이 있는 단일 파일을 저장합니다. 외부 CSS/JS 없이 어디서나 열립니다.</p>
+      <p class="next"><b>전환 조건:</b> 리포트를 열어 확인하면 흐름 종료. 데이터를 직접 고쳤다면 장면 5를 거칠 수 있습니다.</p>
+    </div>
+  </section>
+
+  <section class="scene">
+    <pre class="term">$ python -m fsim table --data broken/
+<span class="err">데이터 오류: matches.csv 7번째 줄: 알 수 없는 팀 ID 'XXX'</span>
+$ echo $?
+1</pre>
+    <div class="desc">
+      <span class="num">장면 5</span>
+      <h2>잘못된 데이터 (시나리오 5)</h2>
+      <p>없는 팀 ID, 음수/문자 점수, 한쪽만 입력된 점수, 중복 경기를 줄 번호와 함께 알려주고 종료 코드 1로 끝납니다.</p>
+      <p class="next"><b>전환 조건:</b> CSV를 고치고 다시 장면 1부터 실행.</p>
+    </div>
+  </section>
+
+</main>
+<footer>모든 팀 이름과 경기 결과는 가상 데이터입니다.</footer>
+</body>
+</html>
