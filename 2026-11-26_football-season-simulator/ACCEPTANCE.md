@@ -1,51 +1,51 @@
 # 인수 기준 (Acceptance Criteria)
 
-상태 표시: [ ] 미충족 / [x] 충족
+상태 표시: [ ] 미충족 / [x] 충족 — 2026-11-26 기준 필수 25/25 충족 (선택 0/2)
 테스트 실행: `cd 2026-11-26_football-season-simulator && python -m unittest discover -s tests -v`
 
 ## F1. 데이터 로드·검증
-- [ ] **AC1-1** Given 기본 `data/` 폴더 / When `load_league("data")` 호출 / Then 12개 팀과 132경기(치른 경기 90, 남은 경기 42)가 로드된다. — 확인: `test_data.TestLoad.test_default_data_counts`
-- [ ] **AC1-2** Given `teams.csv` 에 없는 팀 ID가 있는 경기 줄 / When 로드 / Then 줄 번호를 포함한 `DataError` 가 발생한다. — 확인: `test_data.TestLoad.test_unknown_team`
-- [ ] **AC1-3** Given 음수 또는 숫자가 아닌 점수, 또는 한쪽 점수만 있는 줄 / When 로드 / Then `DataError` 가 발생한다. — 확인: `test_data.TestLoad.test_bad_score`
-- [ ] **AC1-4** Given 같은 홈·원정 조합이 두 번 있는 경우 / When 로드 / Then 중복 경기 `DataError` 가 발생한다. — 확인: `test_data.TestLoad.test_duplicate_match`
-- [ ] **AC1-5** Given 잘못된 데이터 폴더 / When CLI 실행 / Then 오류 메시지를 출력하고 종료 코드 1로 끝난다. — 확인: `test_cli.TestCli.test_error_exit_code`
+- [x] **AC1-1** Given 기본 `data/` 폴더 / When `load_league("data")` 호출 / Then 12개 팀과 132경기(치른 경기 90, 남은 경기 42)가 로드된다. — 확인: `test_data.TestLoad.test_default_data_counts`
+- [x] **AC1-2** Given `teams.csv` 에 없는 팀 ID가 있는 경기 줄 / When 로드 / Then 줄 번호를 포함한 `DataError` 가 발생한다. — 확인: `test_data.TestLoad.test_unknown_team`
+- [x] **AC1-3** Given 음수 또는 숫자가 아닌 점수, 또는 한쪽 점수만 있는 줄 / When 로드 / Then `DataError` 가 발생한다. — 확인: `test_data.TestLoad.test_bad_score`
+- [x] **AC1-4** Given 같은 홈·원정 조합이 두 번 있는 경우 / When 로드 / Then 중복 경기 `DataError` 가 발생한다. — 확인: `test_data.TestLoad.test_duplicate_match`
+- [x] **AC1-5** Given 잘못된 데이터 폴더 / When CLI 실행 / Then 오류 메시지를 출력하고 종료 코드 1로 끝난다. — 확인: `test_cli.TestCli.test_error_exit_code`
 
 ## F2. 현재 순위표
-- [ ] **AC2-1** Given 직접 만든 3팀 소규모 결과 / When `compute_table` / Then 승·무·패·득점·실점·득실차·승점이 손 계산과 일치한다. — 확인: `test_table.TestTable.test_small_league`
-- [ ] **AC2-2** Given 승점이 같은 팀들 / When 정렬 / Then 득실차 → 다득점 → 팀 이름 순으로 정렬된다. — 확인: `test_table.TestTable.test_tiebreak`
-- [ ] **AC2-3** Given 기본 데이터 / When 순위표 계산 / Then 모든 팀의 경기 수 합이 치른 경기×2(=180)이고 총 득점 = 총 실점이다. — 확인: `test_table.TestTable.test_default_consistency`
+- [x] **AC2-1** Given 직접 만든 3팀 소규모 결과 / When `compute_table` / Then 승·무·패·득점·실점·득실차·승점이 손 계산과 일치한다. — 확인: `test_table.TestTable.test_small_league`
+- [x] **AC2-2** Given 승점이 같은 팀들 / When 정렬 / Then 득실차 → 다득점 → 팀 이름 순으로 정렬된다. — 확인: `test_table.TestTable.test_tiebreak`
+- [x] **AC2-3** Given 기본 데이터 / When 순위표 계산 / Then 모든 팀의 경기 수 합이 치른 경기×2(=180)이고 총 득점 = 총 실점이다. — 확인: `test_table.TestTable.test_default_consistency`
 
 ## F3. 팀 전력 추정
-- [ ] **AC3-1** Given 기본 데이터 / When `estimate_strength` / Then 공격력·수비력이 모두 양수이고 공격력의 팀 평균이 1.0 (±0.01)이다. — 확인: `test_model.TestStrength.test_normalized`
-- [ ] **AC3-2** Given 한 팀이 다른 팀보다 득점이 확실히 많은 데이터 / When 추정 / Then 그 팀의 공격력이 더 크다(수비력은 실점이 적을수록 작다). — 확인: `test_model.TestStrength.test_ordering`
-- [ ] **AC3-3** Given 홈팀 득점 합이 원정팀보다 많은 데이터 / When 추정 / Then 홈 어드밴티지가 1보다 크다. — 확인: `test_model.TestStrength.test_home_advantage`
+- [x] **AC3-1** Given 기본 데이터 / When `estimate_strength` / Then 공격력·수비력이 모두 양수이고 공격력의 팀 평균이 1.0 (±0.01)이다. — 확인: `test_model.TestStrength.test_normalized`
+- [x] **AC3-2** Given 한 팀이 다른 팀보다 득점이 확실히 많은 데이터 / When 추정 / Then 그 팀의 공격력이 더 크다(수비력은 실점이 적을수록 작다). — 확인: `test_model.TestStrength.test_ordering`
+- [x] **AC3-3** Given 홈팀 득점 합이 원정팀보다 많은 데이터 / When 추정 / Then 홈 어드밴티지가 1보다 크다. — 확인: `test_model.TestStrength.test_home_advantage`
 
 ## F4. 잔여 경기 시뮬레이션
-- [ ] **AC4-1** Given 같은 시드 / When 두 번 시뮬레이션 / Then 결과(확률·평균 승점)가 완전히 같다. 다른 시드면 달라진다. — 확인: `test_sim.TestSim.test_reproducible`
-- [ ] **AC4-2** Given 포아송 샘플러 λ=1.5 / When 20,000번 샘플 / Then 표본 평균이 1.5±0.05 이다. — 확인: `test_sim.TestSim.test_poisson_mean`
-- [ ] **AC4-3** Given 남은 경기가 없는 리그 / When 시뮬레이션 / Then 현재 순위가 확률 1.0으로 그대로 최종 순위가 된다. — 확인: `test_sim.TestSim.test_no_remaining`
-- [ ] **AC4-4** Given 기본 데이터, n=10,000 / When `simulate` CLI 실행 / Then 10초 이내에 끝난다. — 확인: `time python -m fsim simulate --n 10000 --seed 42`
+- [x] **AC4-1** Given 같은 시드 / When 두 번 시뮬레이션 / Then 결과(확률·평균 승점)가 완전히 같다. 다른 시드면 달라진다. — 확인: `test_sim.TestSim.test_reproducible`
+- [x] **AC4-2** Given 포아송 샘플러 λ=1.5 / When 20,000번 샘플 / Then 표본 평균이 1.5±0.05 이다. — 확인: `test_sim.TestSim.test_poisson_mean`
+- [x] **AC4-3** Given 남은 경기가 없는 리그 / When 시뮬레이션 / Then 현재 순위가 확률 1.0으로 그대로 최종 순위가 된다. — 확인: `test_sim.TestSim.test_no_remaining`
+- [x] **AC4-4** Given 기본 데이터, n=10,000 / When `simulate` CLI 실행 / Then 10초 이내에 끝난다. — 확인: `time python -m fsim simulate --n 10000 --seed 42`
 
 ## F5. 확률 집계
-- [ ] **AC5-1** Given 시뮬레이션 결과 / When 집계 / Then 우승 확률 합 = 1, 상위4 확률 합 = 4, 강등 확률 합 = 2 (±1e-9), 각 팀 순위 분포 합 = 1. — 확인: `test_sim.TestSim.test_probability_sums`
-- [ ] **AC5-2** Given 시뮬레이션 결과 / When 평균 최종 승점 확인 / Then 모든 팀이 현재 승점 이상, 현재 승점 + 3×남은 경기 수 이하이다. — 확인: `test_sim.TestSim.test_points_bounds`
+- [x] **AC5-1** Given 시뮬레이션 결과 / When 집계 / Then 우승 확률 합 = 1, 상위4 확률 합 = 4, 강등 확률 합 = 2 (±1e-9), 각 팀 순위 분포 합 = 1. — 확인: `test_sim.TestSim.test_probability_sums`
+- [x] **AC5-2** Given 시뮬레이션 결과 / When 평균 최종 승점 확인 / Then 모든 팀이 현재 승점 이상, 현재 승점 + 3×남은 경기 수 이하이다. — 확인: `test_sim.TestSim.test_points_bounds`
 
 ## F6. CLI
-- [ ] **AC6-1** Given 기본 데이터 / When `python -m fsim table` / Then 12줄의 순위표가 헤더와 함께 출력되고 종료 코드 0. — 확인: `test_cli.TestCli.test_table`
-- [ ] **AC6-2** Given 기본 데이터 / When `python -m fsim strength` / Then 팀별 공격력·수비력과 홈 어드밴티지가 출력된다. — 확인: `test_cli.TestCli.test_strength`
-- [ ] **AC6-3** Given 기본 데이터 / When `python -m fsim simulate --n 2000 --seed 1` / Then 우승·상위4·강등 확률 열과 예상 승점 열이 있는 표가 출력된다. — 확인: `test_cli.TestCli.test_simulate`
+- [x] **AC6-1** Given 기본 데이터 / When `python -m fsim table` / Then 12줄의 순위표가 헤더와 함께 출력되고 종료 코드 0. — 확인: `test_cli.TestCli.test_table`
+- [x] **AC6-2** Given 기본 데이터 / When `python -m fsim strength` / Then 팀별 공격력·수비력과 홈 어드밴티지가 출력된다. — 확인: `test_cli.TestCli.test_strength`
+- [x] **AC6-3** Given 기본 데이터 / When `python -m fsim simulate --n 2000 --seed 1` / Then 우승·상위4·강등 확률 열과 예상 승점 열이 있는 표가 출력된다. — 확인: `test_cli.TestCli.test_simulate`
 
 ## F7. HTML 리포트
-- [ ] **AC7-1** Given `simulate --html out.html` / When 실행 / Then 파일이 생성되고, 모든 팀 이름과 순위 분포 표가 포함되며, `<script src`·`<link`·`http` 외부 참조가 없다. — 확인: `test_cli.TestCli.test_html_report`
-- [ ] **AC7-2** Given 팀 이름에 `<`, `&` 같은 문자 / When 리포트 생성 / Then HTML 이스케이프된다. — 확인: `test_report.TestReport.test_escape`
+- [x] **AC7-1** Given `simulate --html out.html` / When 실행 / Then 파일이 생성되고, 모든 팀 이름과 순위 분포 표가 포함되며, `<script src`·`<link`·`http` 외부 참조가 없다. — 확인: `test_cli.TestCli.test_html_report`
+- [x] **AC7-2** Given 팀 이름에 `<`, `&` 같은 문자 / When 리포트 생성 / Then HTML 이스케이프된다. — 확인: `test_report.TestReport.test_escape`
 
 ## F8. 가상 데이터 생성기
-- [ ] **AC8-1** Given 12팀 / When 일정 생성 / Then 22라운드, 각 라운드 6경기, 모든 팀 쌍이 홈·원정 한 번씩, 한 라운드에 한 팀은 한 경기만 한다. — 확인: `test_data.TestGenerator.test_schedule`
-- [ ] **AC8-2** Given 같은 시드 / When `python tools/generate_data.py` 두 번 실행 / Then 같은 CSV가 생성된다. — 확인: `test_data.TestGenerator.test_deterministic`
+- [x] **AC8-1** Given 12팀 / When 일정 생성 / Then 22라운드, 각 라운드 6경기, 모든 팀 쌍이 홈·원정 한 번씩, 한 라운드에 한 팀은 한 경기만 한다. — 확인: `test_data.TestGenerator.test_schedule`
+- [x] **AC8-2** Given 같은 시드 / When `python tools/generate_data.py` 두 번 실행 / Then 같은 CSV가 생성된다. — 확인: `test_data.TestGenerator.test_deterministic`
 
 ## 선택 기능 (완료 판정에 포함하지 않음)
 - [ ] **AC9-1 (선택)** `predict HOME AWAY` 가 승/무/패 확률(합 1)과 최빈 스코어를 출력한다.
 - [ ] **AC10-1 (선택)** `--fix "HAN-BUS=2-1"` 로 고정한 경기는 모든 반복에서 해당 결과로 처리된다.
 
 ## 기타
-- [ ] **AC-DOC** `storyboard.html` 이 닫힌 태그로 구성된 단일 HTML이며 외부 의존성(`<script src`, `<link`, `http`)이 없다. — 확인: `test_docs.TestDocs.test_storyboard`
+- [x] **AC-DOC** `storyboard.html` 이 닫힌 태그로 구성된 단일 HTML이며 외부 의존성(`<script src`, `<link`, `http`)이 없다. — 확인: `test_docs.TestDocs.test_storyboard`
