@@ -11,7 +11,7 @@ class TestDocs(unittest.TestCase):
         self.assertEqual(check_html(html), [])
         for bad in ("<script src", "<link", "http"):
             self.assertNotIn(bad, html)
-        for n in range(6):
+        for n in range(9):
             self.assertIn(f"장면 {n}", html)
 
     def test_required_docs_exist(self):

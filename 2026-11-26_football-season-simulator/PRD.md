@@ -37,7 +37,8 @@
 | F7 | HTML 리포트: `simulate --html 파일` 로 순위 확률 표·막대·히트맵이 있는 단일 HTML 저장 | 필수 |
 | F8 | 가상 데이터 생성기: 12팀 더블 라운드로빈 일정 + 앞 15라운드 결과 생성(시드 고정) | 필수 |
 | F9 | 단일 경기 예측: `predict 홈팀 원정팀` → 승/무/패 확률, 최빈 스코어 | 선택 |
-| F10 | What-if: 특정 잔여 경기 결과를 고정하고 시뮬레이션 (`--fix "H-A=2-1"`) | 선택 |
+| F10 | What-if: 특정 잔여 경기 결과를 고정하고 시뮬레이션 (`--fix "H-A=2-1"`, 여러 번 지정 가능) | 선택 |
+| F11 | 백테스트: 앞 N라운드로 추정한 모델로 그 뒤 치른 경기의 승/무/패를 예측해 로그 손실·Brier 점수·적중률을 기준 모델(균등 1/3, 학습 구간 빈도)과 비교 | 선택 |
 
 ## 5. 사용자 시나리오
 1. **현재 순위 보기**: 사용자가 `python -m fsim table` 을 실행 → 현재 순위표(경기수, 승/무/패, 득실, 승점)가 터미널에 출력된다.
@@ -45,6 +46,9 @@
 3. **시즌 시뮬레이션**: `python -m fsim simulate --n 10000 --seed 42` → 진행 상황 없이 몇 초 안에 팀별 우승/상위4/강등 확률과 예상 승점 표가 출력된다.
 4. **리포트 공유**: `--html report.html` 옵션을 붙이면 브라우저로 열 수 있는 리포트가 저장된다. 사용자는 순위 분포 히트맵에서 "우리 팀이 각 순위로 끝날 확률"을 본다.
 5. **잘못된 데이터**: CSV에 없는 팀 ID가 있으면 몇 번째 줄이 잘못됐는지 알려주고 종료 코드 1로 끝난다.
+6. **단일 경기 예측**: `python -m fsim predict HAN BUS` → 두 팀의 기대 득점, 홈 승/무/원정 승 확률, 가장 가능성 높은 스코어 상위 5개가 출력된다.
+7. **What-if**: `python -m fsim simulate --seed 42 --fix "HAN-BUS=2-1"` → 해당 잔여 경기를 2-1로 고정한 뒤 시뮬레이션한다. 고정 경기 목록이 표 위에 표시된다. 이미 치른 경기나 없는 경기를 고정하면 오류(종료 코드 1).
+8. **백테스트**: `python -m fsim backtest --train-rounds 10` → 1~10라운드로 전력을 추정하고 11라운드 이후 치른 경기를 예측해 모델과 기준 모델의 로그 손실·Brier·적중률을 비교한다.
 
 ## 6. 입력 · 출력 · 데이터 구조
 ### 입력
@@ -58,6 +62,8 @@
 - `Strength(attack: dict, defense: dict, home_adv: float, base_rate: float)`
   - 기대 득점: 홈 λ = base × home_adv × attack[홈] × defense[원정], 원정 μ = base × attack[원정] × defense[홈]
 - `SimResult(n, title_prob, top4_prob, releg_prob, mean_points, pos_dist[team][pos])`
+- `MatchPrediction(home, away, lam, mu, p_home, p_draw, p_away, top_scores)` — 0~10골 포아송 스코어 행렬(합이 1이 되도록 정규화)로 계산
+- `BacktestResult(train_rounds, n_test, model/uniform/freq 각각의 log_loss·brier·accuracy)`
 
 ### 출력
 - 터미널 표(고정폭 정렬), HTML 리포트 파일(외부 CSS/JS/CDN 없음)
@@ -71,8 +77,7 @@
 | 일차 | 작업 |
 |------|------|
 | 1일차 (11-26) | PRD/인수기준/스토리보드, 데이터 생성기, 순위표·전력 추정·시뮬레이션·CLI·HTML 리포트, 테스트 |
-| 2일차 | 선택 기능 F9(단일 경기 예측), F10(What-if), 성능 개선 |
-| 3일차 | 마무리, 모델 보정(백테스트로 모델 오차 확인) 및 문서 정리 |
+| 2일차 (11-27) | 선택 기능 F9(단일 경기 예측), F10(What-if), F11(백테스트), 문서 정리 및 완료 처리 |
 
 ## 9. 리스크 / 제약
 - 경기 수가 적으면 전력 추정이 불안정 → 사전값(1.0)으로 축소(shrinkage)해 극단값을 완화한다.
