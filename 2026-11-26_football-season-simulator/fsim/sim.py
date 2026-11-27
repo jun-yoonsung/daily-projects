@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import math
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
-from .data import League
+from .data import DataError, League, Match
 from .model import Strength, estimate_strength
 from .table import DRAW, WIN, compute_table
 
@@ -121,3 +121,49 @@ def simulate(
         top_n=top_n,
         releg_n=releg_n,
     )
+
+
+# ---------------------------------------------------------------- What-if
+
+_FIX_HELP = '형식은 "홈ID-원정ID=홈득점-원정득점" 입니다 (예: "HAN-BUS=2-1")'
+
+
+def parse_fix(spec: str) -> tuple[str, str, int, int]:
+    """'HAN-BUS=2-1' → ('HAN', 'BUS', 2, 1)."""
+    raw = spec.strip()
+    if raw.count("=") != 1:
+        raise DataError(f"--fix '{spec}': {_FIX_HELP}")
+    left, right = raw.split("=")
+    teams = left.strip().split("-")
+    goals = right.strip().split("-")
+    if len(teams) != 2 or len(goals) != 2 or not all(t.strip() for t in teams):
+        raise DataError(f"--fix '{spec}': {_FIX_HELP}")
+    if not all(g.strip().isdigit() for g in goals):
+        raise DataError(f"--fix '{spec}': 점수는 0 이상의 정수여야 합니다. {_FIX_HELP}")
+    return teams[0].strip(), teams[1].strip(), int(goals[0]), int(goals[1])
+
+
+def apply_fixes(league: League, specs: list[str]) -> tuple[League, list[Match]]:
+    """잔여 경기 중 지정한 경기의 결과를 채운 새 League 와 고정된 경기 목록을 돌려준다."""
+    fixes: dict[tuple[str, str], tuple[int, int]] = {}
+    for spec in specs:
+        home, away, hg, ag = parse_fix(spec)
+        key = (home, away)
+        if key in fixes:
+            raise DataError(f"--fix '{spec}': 같은 경기를 두 번 고정했습니다")
+        match = next((m for m in league.matches if (m.home, m.away) == key), None)
+        if match is None:
+            raise DataError(f"--fix '{home}-{away}': 일정에 없는 경기입니다 (홈-원정 순서를 확인하세요)")
+        if match.played:
+            raise DataError(f"--fix '{home}-{away}': 이미 치른 경기입니다")
+        fixes[key] = (hg, ag)
+
+    fixed: list[Match] = []
+    new_matches: list[Match] = []
+    for m in league.matches:
+        if (m.home, m.away) in fixes:
+            hg, ag = fixes[(m.home, m.away)]
+            m = replace(m, home_goals=hg, away_goals=ag)
+            fixed.append(m)
+        new_matches.append(m)
+    return League(league.teams, new_matches), fixed

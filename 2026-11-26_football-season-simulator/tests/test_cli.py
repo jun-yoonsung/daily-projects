@@ -65,6 +65,36 @@ class TestCli(unittest.TestCase):
         self.assertEqual(p.returncode, 1)
         self.assertIn("2번째 줄", p.stderr)
 
+    def test_predict(self):
+        p = run("predict", "HAN", "BUS")
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertIn("기대 득점", p.stdout)
+        self.assertIn("홈 승 / 무 / 원정 승", p.stdout)
+        score_lines = [ln for ln in p.stdout.splitlines() if ln.startswith("  ") and "-" in ln]
+        self.assertEqual(len(score_lines), 5)
+        self.assertEqual(run("predict", "han", "부산 갈매기").returncode, 0)
+        for args in (("HAN", "HAN"), ("HAN", "XXX")):
+            q = run("predict", *args)
+            self.assertEqual(q.returncode, 1)
+            self.assertIn("데이터 오류", q.stderr)
+
+    def test_fix_cli(self):
+        p = run("simulate", "--n", "300", "--seed", "1", "--fix", "JEJ-HAN=0-2", "--fix", "SUW-POH=1-1")
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertIn("고정한 경기 2개", p.stdout)
+        self.assertIn("남은 경기 40개", p.stdout)
+        for spec in ("HAN-JEJ=1-0", "JEJ-HAN=0:2"):
+            q = run("simulate", "--n", "10", "--fix", spec)
+            self.assertEqual(q.returncode, 1)
+            self.assertIn("--fix", q.stderr)
+
+    def test_backtest(self):
+        p = run("backtest", "--train-rounds", "10")
+        self.assertEqual(p.returncode, 0, p.stderr)
+        for word in ("포아송 모델", "학습 구간 빈도", "균등 1/3", "로그손실", "Brier", "30개 평가"):
+            self.assertIn(word, p.stdout)
+        self.assertEqual(run("backtest", "--train-rounds", "15").returncode, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

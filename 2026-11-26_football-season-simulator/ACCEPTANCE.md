@@ -1,6 +1,6 @@
 # 인수 기준 (Acceptance Criteria)
 
-상태 표시: [ ] 미충족 / [x] 충족 — 2026-11-27 갱신 중 (선택 기능 F9~F11 기준 세분화)
+상태 표시: [ ] 미충족 / [x] 충족 — 2026-11-27 기준 필수 25/25 충족, 선택 8/8 충족 (전체 33/33)
 테스트 실행: `cd 2026-11-26_football-season-simulator && python -m unittest discover -s tests -v`
 
 ## F1. 데이터 로드·검증
@@ -45,18 +45,18 @@
 
 ## 선택 기능 (완료 판정에 포함하지 않음)
 ### F9. 단일 경기 예측
-- [ ] **AC9-1 (선택)** Given 기본 데이터 / When `predict_match(strength, "HAN", "BUS")` / Then 홈승+무+원정승 확률 합이 1 (±1e-9)이고, 상위 스코어는 확률 내림차순이며 첫 번째가 행렬의 최댓값이다. — 확인: `test_predict.TestPredict.test_probabilities`
-- [ ] **AC9-2 (선택)** Given λ=μ 인 두 팀(전력 동일, 홈 어드밴티지 1) / When 예측 / Then 홈승 확률 = 원정승 확률 (±1e-9). — 확인: `test_predict.TestPredict.test_symmetric`
-- [ ] **AC9-3 (선택)** Given 기본 데이터 / When `python -m fsim predict HAN BUS` / Then 기대 득점·승/무/패 확률·스코어 상위 5개가 출력되고 종료 코드 0, 없는 팀 ID나 같은 팀이면 종료 코드 1. — 확인: `test_cli.TestCli.test_predict`
+- [x] **AC9-1 (선택)** Given 기본 데이터 / When `predict_match(strength, "HAN", "BUS")` / Then 홈승+무+원정승 확률 합이 1 (±1e-9)이고, 상위 스코어는 확률 내림차순이며 첫 번째가 행렬의 최댓값이다. — 확인: `test_predict.TestPredict.test_probabilities`
+- [x] **AC9-2 (선택)** Given λ=μ 인 두 팀(전력 동일, 홈 어드밴티지 1) / When 예측 / Then 홈승 확률 = 원정승 확률 (±1e-9). — 확인: `test_predict.TestPredict.test_symmetric`
+- [x] **AC9-3 (선택)** Given 기본 데이터 / When `python -m fsim predict HAN BUS` / Then 기대 득점·승/무/패 확률·스코어 상위 5개가 출력되고 종료 코드 0, 없는 팀 ID나 같은 팀이면 종료 코드 1. — 확인: `test_cli.TestCli.test_predict`
 
 ### F10. What-if 결과 고정
-- [ ] **AC10-1 (선택)** Given 남은 경기 전부를 `--fix` 로 고정 / When 시뮬레이션 / Then 모든 팀의 최종 순위 확률이 0 또는 1이고 예상 승점이 고정 결과로 손 계산한 승점과 같다(모든 반복에서 고정 결과 사용). — 확인: `test_sim.TestFix.test_fix_all_deterministic`
-- [ ] **AC10-2 (선택)** Given 한 경기 고정 / When `apply_fixes` / Then 남은 경기 수가 1 줄고, 해당 경기는 지정 점수로 처리된다. 전력 추정은 실제 치른 경기만 사용한다. — 확인: `test_sim.TestFix.test_fix_one`
-- [ ] **AC10-3 (선택)** Given 이미 치른 경기, 일정에 없는 경기, 형식이 틀린 문자열(`HAN-BUS=2:1` 등) / When `--fix` / Then `DataError` 와 종료 코드 1. — 확인: `test_sim.TestFix.test_fix_errors`, `test_cli.TestCli.test_fix_cli`
+- [x] **AC10-1 (선택)** Given 남은 경기 전부를 `--fix` 로 고정 / When 시뮬레이션 / Then 모든 팀의 최종 순위 확률이 0 또는 1이고 예상 승점이 고정 결과로 손 계산한 승점과 같다(모든 반복에서 고정 결과 사용). — 확인: `test_sim.TestFix.test_fix_all_deterministic`
+- [x] **AC10-2 (선택)** Given 한 경기 고정 / When `apply_fixes` / Then 남은 경기 수가 1 줄고, 해당 경기는 지정 점수로 처리된다. 전력 추정은 실제 치른 경기만 사용한다. — 확인: `test_sim.TestFix.test_fix_one`
+- [x] **AC10-3 (선택)** Given 이미 치른 경기, 일정에 없는 경기, 형식이 틀린 문자열(`HAN-BUS=2:1` 등) / When `--fix` / Then `DataError` 와 종료 코드 1. — 확인: `test_sim.TestFix.test_fix_errors`, `test_cli.TestCli.test_fix_cli`
 
 ### F11. 백테스트
-- [ ] **AC11-1 (선택)** Given 기본 데이터 / When `backtest(league, train_rounds=10)` / Then 11~15라운드의 30경기가 평가되고, 모델·균등·빈도 기준의 로그 손실이 유한한 양수, Brier 는 0~2, 적중률은 0~1 이며 균등 기준 로그 손실은 ln 3 이다. — 확인: `test_predict.TestBacktest.test_default`
-- [ ] **AC11-2 (선택)** Given 학습 구간 뒤에 치른 경기가 없거나 train_rounds < 1 / When 백테스트 / Then `DataError`. CLI `python -m fsim backtest --train-rounds 10` 은 표를 출력하고 종료 코드 0. — 확인: `test_predict.TestBacktest.test_errors`, `test_cli.TestCli.test_backtest`
+- [x] **AC11-1 (선택)** Given 기본 데이터 / When `backtest(league, train_rounds=10)` / Then 11~15라운드의 30경기가 평가되고, 모델·균등·빈도 기준의 로그 손실이 유한한 양수, Brier 는 0~2, 적중률은 0~1 이며 균등 기준 로그 손실은 ln 3 이다. — 확인: `test_predict.TestBacktest.test_default`
+- [x] **AC11-2 (선택)** Given 학습 구간 뒤에 치른 경기가 없거나 train_rounds < 1 / When 백테스트 / Then `DataError`. CLI `python -m fsim backtest --train-rounds 10` 은 표를 출력하고 종료 코드 0. — 확인: `test_predict.TestBacktest.test_errors`, `test_cli.TestCli.test_backtest`
 
 ## 기타
-- [ ] **AC-DOC** `storyboard.html` 이 닫힌 태그로 구성된 단일 HTML이며 외부 의존성(`<script src`, `<link`, `http`)이 없고, 장면 0~8이 모두 있다. — 확인: `test_docs.TestDocs.test_storyboard`
+- [x] **AC-DOC** `storyboard.html` 이 닫힌 태그로 구성된 단일 HTML이며 외부 의존성(`<script src`, `<link`, `http`)이 없고, 장면 0~8이 모두 있다. — 확인: `test_docs.TestDocs.test_storyboard`

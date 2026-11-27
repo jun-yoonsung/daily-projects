@@ -1,4 +1,4 @@
-"""명령줄 인터페이스: table / strength / simulate."""
+"""명령줄 인터페이스: table / strength / simulate / predict / backtest."""
 
 from __future__ import annotations
 
@@ -11,7 +11,8 @@ from pathlib import Path
 from .data import DataError, load_league
 from .model import estimate_strength
 from .report import render_html
-from .sim import simulate
+from .predict import backtest, predict_match
+from .sim import apply_fixes, simulate
 from .table import compute_table
 
 DEFAULT_DATA = Path(__file__).resolve().parent.parent / "data"
@@ -23,6 +24,10 @@ def _width(s: str) -> int:
 
 def _ljust(s: str, w: int) -> str:
     return s + " " * max(0, w - _width(s))
+
+
+def _rjust(s: str, w: int) -> str:
+    return " " * max(0, w - _width(s)) + s
 
 
 def cmd_table(league, args) -> int:
@@ -49,8 +54,15 @@ def cmd_strength(league, args) -> int:
 def cmd_simulate(league, args) -> int:
     if args.n <= 0:
         raise DataError("--n 은 1 이상이어야 합니다")
+    strength = estimate_strength(league)  # 전력은 실제로 치른 경기만으로 추정
+    if args.fix:
+        league, fixed = apply_fixes(league, args.fix)
+        desc = ", ".join(
+            f"{league.name_of(m.home)} {m.home_goals}-{m.away_goals} {league.name_of(m.away)}" for m in fixed
+        )
+        print(f"고정한 경기 {len(fixed)}개: {desc}")
     t0 = time.perf_counter()
-    res = simulate(league, n=args.n, seed=args.seed)
+    res = simulate(league, n=args.n, seed=args.seed, strength=strength)
     elapsed = time.perf_counter() - t0
     print(f"남은 경기 {len(league.remaining)}개를 {res.n}회 시뮬레이션 (seed={args.seed}, {elapsed:.1f}초)")
     ids = res.ranked_ids()
@@ -66,6 +78,41 @@ def cmd_simulate(league, args) -> int:
     return 0
 
 
+def _team_id(league, raw: str) -> str:
+    ids = {t.upper(): t for t in league.team_ids}
+    if raw.upper() in ids:
+        return ids[raw.upper()]
+    for t in league.teams:
+        if t.name == raw:
+            return t.id
+    raise DataError(f"알 수 없는 팀 '{raw}' (사용 가능한 ID: {', '.join(league.team_ids)})")
+
+
+def cmd_predict(league, args) -> int:
+    home, away = _team_id(league, args.home), _team_id(league, args.away)
+    pred = predict_match(estimate_strength(league), home, away, top=5)
+    print(f"{league.name_of(home)} (홈) vs {league.name_of(away)} (원정)")
+    print(f"기대 득점      : {pred.lam:.2f} - {pred.mu:.2f}")
+    print(f"홈 승 / 무 / 원정 승 : {pred.p_home * 100:.1f}% / {pred.p_draw * 100:.1f}% / {pred.p_away * 100:.1f}%")
+    print("가장 가능성 높은 스코어")
+    for hg, ag, p in pred.top_scores:
+        print(f"  {hg}-{ag}  {p * 100:>5.1f}%")
+    return 0
+
+
+def cmd_backtest(league, args) -> int:
+    r = backtest(league, args.train_rounds)
+    print(f"1~{r.train_rounds}라운드 경기 {r.n_train}개로 학습, 이후 치른 경기 {r.n_test}개 평가")
+    rows = [("포아송 모델", r.model), ("학습 구간 빈도", r.freq), ("균등 1/3", r.uniform)]
+    nw = max(_width(n) for n, _ in rows) + 2
+    print(f"{_ljust('모델', nw)}{_rjust('로그손실', 10)}{_rjust('Brier', 8)}{_rjust('적중률', 9)}")
+    for name, sc in rows:
+        acc = "-" if sc is r.uniform else f"{sc.accuracy * 100:.1f}%"
+        print(f"{_ljust(name, nw)}{sc.log_loss:>10.3f}{sc.brier:>8.3f}{acc:>9}")
+    print("(로그손실·Brier 는 낮을수록 좋음, 적중률은 가장 확률 높은 결과가 맞은 비율, 균등 모델은 적중률 없음)")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="fsim", description="축구 리그 시즌 시뮬레이터 (가상 데이터)")
     p.add_argument("--data", default=str(DEFAULT_DATA), help="teams.csv / matches.csv 가 있는 폴더")
@@ -76,6 +123,13 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--n", type=int, default=10000, help="반복 횟수 (기본 10000)")
     s.add_argument("--seed", type=int, default=None, help="난수 시드 (같으면 같은 결과)")
     s.add_argument("--html", default=None, help="HTML 리포트 저장 경로")
+    s.add_argument("--fix", action="append", default=[], metavar='"H-A=2-1"',
+                   help="잔여 경기 결과 고정 (여러 번 지정 가능)")
+    pr = sub.add_parser("predict", help="단일 경기 승/무/패 확률과 스코어 예측")
+    pr.add_argument("home", help="홈팀 ID 또는 이름")
+    pr.add_argument("away", help="원정팀 ID 또는 이름")
+    b = sub.add_parser("backtest", help="앞 N라운드로 학습해 이후 경기 예측 정확도 확인")
+    b.add_argument("--train-rounds", type=int, default=10, help="학습에 쓸 라운드 수 (기본 10)")
     # --data 를 서브커맨드 뒤에 써도 되도록
     for sp in sub.choices.values():
         sp.add_argument("--data", default=argparse.SUPPRESS, help=argparse.SUPPRESS)
@@ -86,7 +140,8 @@ def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
     try:
         league = load_league(args.data)
-        handler = {"table": cmd_table, "strength": cmd_strength, "simulate": cmd_simulate}[args.cmd]
+        handler = {"table": cmd_table, "strength": cmd_strength, "simulate": cmd_simulate,
+                   "predict": cmd_predict, "backtest": cmd_backtest}[args.cmd]
         return handler(league, args)
     except DataError as e:
         print(f"데이터 오류: {e}", file=sys.stderr)

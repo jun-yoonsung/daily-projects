@@ -3,7 +3,7 @@ import unittest
 
 from helpers import DATA, HEADER, TEAMS3, write_league
 
-from fsim import compute_table, load_league, poisson, simulate
+from fsim import DataError, apply_fixes, compute_table, estimate_strength, load_league, parse_fix, poisson, simulate
 
 
 class TestSim(unittest.TestCase):
@@ -56,6 +56,62 @@ class TestSim(unittest.TestCase):
     def test_invalid_n(self):
         with self.assertRaises(ValueError):
             simulate(self.league, n=0)
+
+
+class TestFix(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.league = load_league(DATA)
+
+    def test_parse(self):
+        self.assertEqual(parse_fix(" JEJ-HAN = 0-2 "), ("JEJ", "HAN", 0, 2))
+
+    def test_fix_one(self):
+        before = len(self.league.remaining)
+        fixed_league, fixed = apply_fixes(self.league, ["JEJ-HAN=0-2"])
+        self.assertEqual(len(fixed_league.remaining), before - 1)
+        self.assertEqual(len(self.league.remaining), before)  # 원본은 그대로
+        self.assertEqual([(m.home, m.away, m.home_goals, m.away_goals) for m in fixed], [("JEJ", "HAN", 0, 2)])
+        t0 = {s.team: s for s in compute_table(self.league)}
+        t1 = {s.team: s for s in compute_table(fixed_league)}
+        self.assertEqual(t1["HAN"].points, t0["HAN"].points + 3)
+        self.assertEqual(t1["JEJ"].points, t0["JEJ"].points)
+        # CLI 와 같은 방식: 전력은 원본(실제 치른 경기)으로 추정해 넘긴다
+        st = estimate_strength(self.league)
+        res = simulate(fixed_league, n=300, seed=1, strength=st)
+        self.assertEqual(res.remaining_games["HAN"] + 1, sum(
+            1 for m in self.league.remaining if "HAN" in (m.home, m.away)))
+        self.assertGreaterEqual(res.mean_points["HAN"], t1["HAN"].points)
+
+    def test_fix_all_deterministic(self):
+        specs = [f"{m.home}-{m.away}=1-0" for m in self.league.remaining]
+        fixed_league, fixed = apply_fixes(self.league, specs)
+        self.assertEqual(len(fixed), len(self.league.remaining))
+        self.assertEqual(fixed_league.remaining, [])
+        res = simulate(fixed_league, n=200, seed=5, strength=estimate_strength(self.league))
+        table = compute_table(fixed_league)
+        keys = [(s.points, s.gd, s.gf) for s in table]
+        for pos, s in enumerate(table):
+            self.assertEqual(res.mean_points[s.team], s.points)
+            self.assertTrue(all(v in (0.0, 1.0) or keys.count((s.points, s.gd, s.gf)) > 1
+                                for v in res.pos_dist[s.team]))
+            if keys.count((s.points, s.gd, s.gf)) == 1:
+                self.assertEqual(res.pos_dist[s.team][pos], 1.0)
+
+    def test_fix_errors(self):
+        played = self.league.played[0]
+        bad = [
+            f"{played.home}-{played.away}=1-0",  # 이미 치른 경기
+            "HAN-HAN=1-0",                         # 일정에 없음
+            "XXX-HAN=1-0",                         # 없는 팀
+            "JEJ-HAN=0:2", "JEJ-HAN", "JEJ=0-2", "JEJ-HAN=a-1", "JEJ-HAN=-1-0",
+            "JEJ-HAN=1-0;JEJ-HAN=2-0",
+        ]
+        for spec in bad:
+            with self.subTest(spec=spec), self.assertRaises(DataError):
+                apply_fixes(self.league, [spec])
+        with self.assertRaises(DataError):
+            apply_fixes(self.league, ["JEJ-HAN=1-0", "JEJ-HAN=2-0"])  # 중복 고정
 
 
 if __name__ == "__main__":
